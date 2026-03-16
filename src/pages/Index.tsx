@@ -1847,10 +1847,23 @@ export default function Index() {
           />
         )}
         {tab === "price" && (
-          <PriceSection
-            onAdd={handlePriceAdd}
-            editMode={priceEditMode}
-          />
+          <div style={{ display: "flex", flexDirection: "column", height: "100%" }}>
+            <PriceSection
+              onAdd={handlePriceAdd}
+              editMode={priceEditMode}
+            />
+            {pendingPriceAdd && activeOrder && (
+              <div style={{ padding: "12px 16px", borderTop: "1px solid #e5e7eb", background: "#fff", flexShrink: 0 }}>
+                <button
+                  className="pass-confirm"
+                  style={{ width: "100%", justifyContent: "center" }}
+                  onClick={() => { setPendingPriceAdd(false); setTab("orders"); }}
+                >
+                  Готово — вернуться в заказ
+                </button>
+              </div>
+            )}
+          </div>
         )}
       </main>
     </div>
