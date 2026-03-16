@@ -1215,13 +1215,23 @@ function OrdersSection({ onOpenOrder }: { onOpenOrder: (order: Order) => void })
     <div className="space-y-5">
 
       {/* Sub-tabs */}
-      <div className="sub-tabs">
-        <button className={`sub-tab ${view === "orders" ? "active" : ""}`} onClick={() => setView("orders")}>
-          <Icon name="Briefcase" size={14} /> Заказы
-        </button>
-        <button className={`sub-tab ${view === "clients" ? "active" : ""}`} onClick={() => setView("clients")}>
-          <Icon name="Users" size={14} /> Клиенты
-          <span className="smeta-badge" style={{ background: "#6b7280" }}>{clients.length}</span>
+      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+        <div className="sub-tabs" style={{ flex: 1 }}>
+          <button className={`sub-tab ${view === "orders" ? "active" : ""}`} onClick={() => setView("orders")}>
+            <Icon name="Briefcase" size={14} /> Заказы
+          </button>
+          <button className={`sub-tab ${view === "clients" ? "active" : ""}`} onClick={() => setView("clients")}>
+            <Icon name="Users" size={14} /> Клиенты
+            <span className="smeta-badge" style={{ background: "#6b7280" }}>{clients.length}</span>
+          </button>
+        </div>
+        <button
+          className="add-btn"
+          style={{ flexShrink: 0 }}
+          onClick={() => { if (view === "orders") setShowNew(true); else setShowNewClient(true); }}
+          title={view === "orders" ? "Новый заказ" : "Новый клиент"}
+        >
+          <Icon name="Plus" size={16} />
         </button>
       </div>
 
