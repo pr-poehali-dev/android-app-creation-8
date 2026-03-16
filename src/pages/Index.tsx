@@ -433,13 +433,386 @@ function FinanceSection() {
   );
 }
 
+// ─── Price list ──────────────────────────────────────────
+type PriceItem = { name: string; unit?: string; price: string };
+type PriceGroup = { id: string; title: string; items: PriceItem[] };
+
+const PRICE_DATA: PriceGroup[] = [
+  {
+    id: "rozetki",
+    title: "Установка и замена розеток",
+    items: [
+      { name: "Замена розетки", price: "от 180 ₽" },
+      { name: "Установка розетки скрытой установки", price: "от 190 ₽" },
+      { name: "Установка розетки с заземляющим контактом", price: "от 195 ₽" },
+      { name: "Установка розетки в блоке", price: "от 200 ₽" },
+      { name: "Установка розетки в кабель-канал", price: "от 190 ₽" },
+      { name: "Установка компьютерной розетки", price: "от 200 ₽" },
+      { name: "Установка телевизионной розетки", price: "от 200 ₽" },
+      { name: "Установка розетки (штробление гнезда, установка подрозетника и розетки) — гипсокартон", price: "от 250 ₽" },
+      { name: "Установка розетки в кирпичную стену", price: "от 300 ₽" },
+      { name: "Установка розетки в бетонную стену", price: "от 350 ₽" },
+    ],
+  },
+  {
+    id: "rozetki-open",
+    title: "Монтаж розеток открытой установки (наружной)",
+    items: [
+      { name: "Установка розетки открытой установки", price: "от 180 ₽" },
+      { name: "Установка розетки открытой с заземляющим контактом", price: "от 190 ₽" },
+      { name: "Установка силовой розетки", price: "от 600 ₽" },
+      { name: "Ремонт розетки", price: "от 100 ₽" },
+    ],
+  },
+  {
+    id: "vyklyuchateli",
+    title: "Установка выключателей скрытой установки (внутренней)",
+    items: [
+      { name: "Замена выключателя", price: "от 190 ₽" },
+      { name: "Установка одноклавишного выключателя", price: "от 190 ₽" },
+      { name: "Установка двухклавишного выключателя", price: "от 200 ₽" },
+      { name: "Установка выключателя в блоке", price: "от 250 ₽" },
+      { name: "Установка проходного выключателя", price: "от 600 ₽" },
+      { name: "Установка выключателя (штробление гнезда, установка подрозетника и выключателя) — гипсокартон", price: "от 300 ₽" },
+      { name: "Установка выключателя в кирпичную стену", price: "от 350 ₽" },
+      { name: "Установка выключателя в бетонную стену", price: "от 400 ₽" },
+    ],
+  },
+  {
+    id: "vyklyuchateli-open",
+    title: "Монтаж выключателей открытой установки (наружной)",
+    items: [
+      { name: "Установка наружного выключателя", price: "от 190 ₽" },
+      { name: "Установка одноклавишного выключателя открытой установки", price: "от 190 ₽" },
+      { name: "Установка двухклавишного выключателя открытой установки", price: "от 200 ₽" },
+    ],
+  },
+  {
+    id: "lyustry",
+    title: "Установка люстр, светильников, бра",
+    items: [
+      { name: "Установка светодиодной люстры", price: "от 1500 ₽" },
+      { name: "Установка люстры на натяжной потолок", price: "от 1200 ₽" },
+      { name: "Установка люстры с пультом", price: "от 1500 ₽" },
+      { name: "Установка люстры на высоте более 4 метров или весом более 5 кг.", price: "от 2000 ₽" },
+      { name: "Установка светильников", price: "от 300 ₽" },
+      { name: "Установка бра", price: "от 400 ₽" },
+      { name: "Замена бра", price: "от 300 ₽" },
+      { name: "Сборка люстры", price: "от 400 ₽" },
+      { name: "Ремонт люстры", price: "от 1000 ₽" },
+      { name: "Ремонт люстры с пультом", price: "от 1500 ₽" },
+      { name: "Ремонт светодиодной люстры", price: "от 1400 ₽" },
+      { name: "Установка светодиодной панели в потолок Армстронг", price: "от 400 ₽" },
+      { name: "Установка накладной светодиодной панели", price: "от 450 ₽" },
+    ],
+  },
+  {
+    id: "razvodka",
+    title: "Полная замена проводки (черновая работа)",
+    items: [
+      { name: "Квартира 1-комнатная (гипс, кирпич)", price: "от 25 000 ₽" },
+      { name: "Квартира 2-комнатная (гипс, кирпич)", price: "от 28 000 ₽" },
+      { name: "Квартира 3-комнатная (гипс, кирпич)", price: "от 31 000 ₽" },
+      { name: "Частный дом, коттедж (гипс, кирпич)", price: "индивидуально" },
+      { name: "Другие объекты (гипс, кирпич)", price: "индивидуально" },
+      { name: "Квартира 1-комнатная (бетон)", price: "от 28 000 ₽" },
+      { name: "Квартира 2-комнатная (бетон)", price: "от 33 000 ₽" },
+      { name: "Квартира 3-комнатная (бетон)", price: "от 37 000 ₽" },
+      { name: "Другие объекты (бетон)", price: "индивидуально" },
+    ],
+  },
+  {
+    id: "kuhnya",
+    title: "Электрика на кухне",
+    items: [
+      { name: "Перенос силовой розетки электроплиты", unit: "шт.", price: "от 2000 ₽" },
+      { name: "Дополнительные розетки к существующим", price: "от 2000 ₽" },
+      { name: "Полная разводка электрики под новый кухонный гарнитур", price: "от 5000 ₽" },
+    ],
+  },
+  {
+    id: "kz",
+    title: "Устранение короткого замыкания",
+    items: [
+      { name: "Замыкание проводки", price: "от 1000 ₽" },
+      { name: "Выбило автоматический выключатель, УЗО, пробки", price: "от 600 ₽" },
+    ],
+  },
+  {
+    id: "plita",
+    title: "Подключение электроплиты",
+    items: [
+      { name: "Подключение электроплиты", price: "от 1500 ₽" },
+      { name: "Подключение варочной панели", price: "от 1450 ₽" },
+      { name: "Подключение индукционной варочной панели", price: "от 1520 ₽" },
+      { name: "Подключение электрической варочной панели", price: "от 1500 ₽" },
+      { name: "Подключение духового шкафа", price: "от 600 ₽" },
+      { name: "Замена розетки для электроплиты", price: "от 1200 ₽" },
+      { name: "Установка скрытой розетки для электроплиты", price: "от 1400 ₽" },
+    ],
+  },
+  {
+    id: "kabel",
+    title: "Прокладка кабеля",
+    items: [
+      { name: "Прокладка кабеля сечением до 4 кв.мм. 220v", unit: "1 м", price: "от 70 ₽" },
+      { name: "Прокладка кабеля сечением 4–10 кв.мм. 220v", unit: "1 м", price: "от 80 ₽" },
+      { name: "Прокладка кабеля сечением до 4 кв.мм. 380v", unit: "1 м", price: "от 70 ₽" },
+      { name: "Прокладка кабеля сечением 4–6 кв.мм. 380v", unit: "1 м", price: "от 80 ₽" },
+      { name: "Прокладка кабеля сечением более 6 кв.мм. 380v", unit: "1 м", price: "от 90 ₽" },
+    ],
+  },
+  {
+    id: "gofra",
+    title: "Прокладка кабеля в гофре",
+    items: [
+      { name: "Прокладка кабеля в гофре сечением до 4 кв.мм. 220v", unit: "1 м", price: "от 70 ₽" },
+      { name: "Прокладка кабеля в гофре сечением 4–10 кв.мм. 220v", unit: "1 м", price: "от 80 ₽" },
+      { name: "Прокладка кабеля в гофре сечением до 4 кв.мм. 380v", unit: "1 м", price: "от 90 ₽" },
+      { name: "Прокладка кабеля в гофре сечением 4–6 кв.мм. 380v", unit: "1 м", price: "от 90 ₽" },
+    ],
+  },
+  {
+    id: "kabelkanal",
+    title: "Прокладка кабеля в кабель-канале",
+    items: [
+      { name: "Прокладка кабеля в кабель-канале сечением до 4 кв.мм. 220v", unit: "1 м", price: "от 70 ₽" },
+      { name: "Прокладка кабеля в кабель-канале сечением 4–10 кв.мм. 220v", unit: "1 м", price: "от 80 ₽" },
+      { name: "Прокладка кабеля в кабель-канале сечением до 4 кв.мм. 380v", unit: "1 м", price: "от 80 ₽" },
+      { name: "Прокладка кабеля в кабель-канале сечением 4–6 кв.мм. 380v", unit: "1 м", price: "от 90 ₽" },
+    ],
+  },
+  {
+    id: "prochiy-kabel",
+    title: "Прочая прокладка кабеля",
+    items: [
+      { name: "Прокладка кабеля любого другого сечения (не вошедшая в прайс)", unit: "1 м", price: "индивидуально" },
+      { name: "Прокладка интернет кабеля", unit: "1 м", price: "от 60 ₽" },
+      { name: "Прокладка телевизионного кабеля", unit: "1 м", price: "от 60 ₽" },
+      { name: "Прокладка оптического кабеля", unit: "1 м", price: "от 70 ₽" },
+      { name: "Прокладка провода", unit: "1 м", price: "индивидуально" },
+      { name: "Монтаж электропроводки", price: "индивидуально" },
+    ],
+  },
+  {
+    id: "avtomat",
+    title: "Автоматические выключатели",
+    items: [
+      { name: "Установка автоматического выключателя однополюсного", price: "от 300 ₽" },
+      { name: "Установка автоматического выключателя двухполюсного", price: "от 400 ₽" },
+      { name: "Установка автоматического выключателя трёхполюсного", price: "от 500 ₽" },
+      { name: "Установка УЗО, ДИФ двухполюсного", price: "от 400 ₽" },
+      { name: "Установка УЗО, ДИФ четырёхполюсного", price: "от 700 ₽" },
+      { name: "Установка реле напряжения", price: "от 1200 ₽" },
+      { name: "Замена пакетного выключателя", price: "от 700 ₽" },
+    ],
+  },
+  {
+    id: "shtrob-steny",
+    title: "Штробление стен",
+    items: [
+      { name: "Штробление гипса", unit: "1 м", price: "от 250 ₽" },
+      { name: "Штробление кирпича", unit: "1 м", price: "от 300 ₽" },
+      { name: "Штробление бетона", unit: "1 м", price: "от 350 ₽" },
+    ],
+  },
+  {
+    id: "shtrob-rozetki",
+    title: "Штробление розеток",
+    items: [
+      { name: "Штробление гипса", unit: "1 шт", price: "от 250 ₽" },
+      { name: "Штробление кирпича", unit: "1 шт", price: "от 300 ₽" },
+      { name: "Штробление бетона", unit: "1 шт", price: "от 350 ₽" },
+    ],
+  },
+  {
+    id: "retro",
+    title: "Ретро проводка",
+    items: [
+      { name: "Прокладка ретро провода до 4 мм", unit: "1 м", price: "от 100 ₽" },
+      { name: "Установка и расключение распаячной коробки", unit: "1 м", price: "от 400 ₽" },
+      { name: "Установка наружных розеток и выключателей", unit: "1 м", price: "от 400 ₽" },
+    ],
+  },
+  {
+    id: "shchit-vnutr",
+    title: "Монтаж электрощита внутренний (штробление стены, крепление, расключение)",
+    items: [
+      { name: "До 12 модулей", price: "от 1500 ₽" },
+      { name: "Более 12 и до 24 модулей", price: "от 2100 ₽" },
+      { name: "Более 24 и до 36 модулей", price: "от 2600 ₽" },
+      { name: "Более 36 модулей (крепление, расключение проводов по шинам земля/ноль)", price: "индивидуально" },
+    ],
+  },
+  {
+    id: "shchit",
+    title: "Монтаж щита (наружный)",
+    items: [
+      { name: "До 12 модулей", price: "от 1000 ₽" },
+      { name: "Более 12 и до 24 модулей", price: "от 1500 ₽" },
+      { name: "Более 24 и до 36 модулей", price: "от 1900 ₽" },
+      { name: "Более 36 модулей", price: "индивидуально" },
+      { name: "Сборка щита", price: "от 3000 ₽" },
+    ],
+  },
+  {
+    id: "schetchik",
+    title: "Установка электросчётчика",
+    items: [
+      { name: "Установка однофазного", price: "от 1000 ₽" },
+      { name: "Установка трёхфазного электросчётчика", price: "от 1400 ₽" },
+      { name: "Замена однофазного электросчётчика", price: "от 1200 ₽" },
+      { name: "Замена трёхфазного электросчётчика", price: "от 1600 ₽" },
+      { name: "Замена трансформаторов тока", price: "от 700 ₽" },
+    ],
+  },
+  {
+    id: "diagnostika",
+    title: "Комплексная диагностика",
+    items: [
+      { name: "Диагностика одной комнаты или", price: "от 1500 ₽" },
+      { name: "Диагностика любой квартиры до 80 кв.м", price: "от 3000 ₽" },
+      { name: "Диагностика дома, коттеджа", price: "от 4000 ₽" },
+      { name: "Диагностика офисов, промышленных помещений, складов", price: "от 2000 ₽" },
+    ],
+  },
+  {
+    id: "naprjazh",
+    title: "Работа под напряжением",
+    items: [
+      { name: "Напряжение 220 В", price: "+ 50% от позиции" },
+      { name: "Напряжение 380 В", price: "+ 100% от позиции" },
+    ],
+  },
+  {
+    id: "prochie",
+    title: "Прочие услуги",
+    items: [
+      { name: "Установка звонка", price: "от 400 ₽" },
+      { name: "Установка кнопки звонка", price: "от 400 ₽" },
+      { name: "Подключить вытяжку", price: "от 550 ₽" },
+      { name: "Сверление сквозного отверстия диаметр до 20 мм", price: "от 200 ₽" },
+      { name: "Заменить лампу", price: "от 50 ₽" },
+      { name: "Подключение терморегулятора", price: "от 600 ₽" },
+      { name: "Контур защитного заземления", price: "от 5000 ₽" },
+      { name: "Установка распределительной коробки открытой", price: "от 100 ₽" },
+    ],
+  },
+  {
+    id: "raskluchenie",
+    title: "Расключение распределительной коробки",
+    items: [
+      { name: "Расключение кабелей сечением до 4 мм кв. (стоимость за один кабель)", price: "от 50 ₽" },
+      { name: "Расключение кабелей сечением 4–10 мм кв. (стоимость за один кабель)", price: "от 80 ₽" },
+      { name: "Позиции не вошедшие в прайс", price: "индивидуально" },
+    ],
+  },
+];
+
+function PriceSection() {
+  const [search, setSearch] = useState("");
+  const [openGroups, setOpenGroups] = useState<Set<string>>(new Set(["rozetki"]));
+
+  const query = search.toLowerCase().trim();
+
+  const filtered = PRICE_DATA.map((group) => ({
+    ...group,
+    items: query
+      ? group.items.filter((item) => item.name.toLowerCase().includes(query))
+      : group.items,
+  })).filter((g) => g.items.length > 0);
+
+  function toggleGroup(id: string) {
+    setOpenGroups((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
+
+  const totalServices = PRICE_DATA.reduce((s, g) => s + g.items.length, 0);
+
+  return (
+    <div className="space-y-4">
+      {/* Stats row */}
+      <div className="flex gap-3">
+        <div className="stat-card">
+          <span className="stat-num">{PRICE_DATA.length}</span>
+          <span className="stat-label">Категорий</span>
+        </div>
+        <div className="stat-card">
+          <span className="stat-num" style={{ color: "#2563eb" }}>{totalServices}</span>
+          <span className="stat-label">Услуг в прайсе</span>
+        </div>
+      </div>
+
+      {/* Search */}
+      <div className="add-row">
+        <Icon name="Search" size={15} style={{ color: "#9ca3af", flexShrink: 0 }} />
+        <input
+          className="add-input"
+          placeholder="Поиск услуги…"
+          value={search}
+          onChange={(e) => {
+            setSearch(e.target.value);
+            if (e.target.value.trim()) {
+              setOpenGroups(new Set(PRICE_DATA.map((g) => g.id)));
+            }
+          }}
+        />
+        {search && (
+          <button className="icon-btn" onClick={() => setSearch("")}>
+            <Icon name="X" size={14} />
+          </button>
+        )}
+      </div>
+
+      {/* Groups */}
+      <div className="space-y-2">
+        {filtered.map((group) => {
+          const isOpen = openGroups.has(group.id) || !!query;
+          return (
+            <div key={group.id} className="price-group">
+              <button className="price-group-header" onClick={() => toggleGroup(group.id)}>
+                <span className="price-group-title">{group.title}</span>
+                <div className="flex items-center gap-2 flex-shrink-0">
+                  <span className="price-count">{group.items.length}</span>
+                  <Icon name={isOpen ? "ChevronUp" : "ChevronDown"} size={14} style={{ color: "#9ca3af" }} />
+                </div>
+              </button>
+              {isOpen && (
+                <div className="price-items">
+                  {group.items.map((item, i) => (
+                    <div key={i} className="price-row">
+                      <span className="price-name">{item.name}</span>
+                      <div className="price-right">
+                        {item.unit && <span className="price-unit">{item.unit}</span>}
+                        <span className="price-value">{item.price}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          );
+        })}
+        {filtered.length === 0 && (
+          <div className="text-center py-10 text-gray-400 text-sm">Ничего не найдено</div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 // ─── Root ─────────────────────────────────────────────────
-type Tab = "tasks" | "habits" | "finance";
+type Tab = "tasks" | "habits" | "finance" | "price";
 
 const TABS: { id: Tab; label: string; icon: string }[] = [
   { id: "tasks", label: "Задачи", icon: "CheckSquare" },
   { id: "habits", label: "Привычки", icon: "Repeat2" },
   { id: "finance", label: "Финансы", icon: "Wallet" },
+  { id: "price", label: "Прайс", icon: "ListOrdered" },
 ];
 
 export default function Index() {
@@ -474,6 +847,7 @@ export default function Index() {
         {tab === "tasks" && <TasksSection />}
         {tab === "habits" && <HabitsSection />}
         {tab === "finance" && <FinanceSection />}
+        {tab === "price" && <PriceSection />}
       </main>
     </div>
   );
