@@ -806,16 +806,15 @@ function PriceSection() {
 }
 
 // ─── Root ─────────────────────────────────────────────────
-type Tab = "habits" | "finance" | "price";
+type Tab = "finance" | "price";
 
 const TABS: { id: Tab; label: string; icon: string }[] = [
-  { id: "habits", label: "Привычки", icon: "Repeat2" },
   { id: "finance", label: "Финансы", icon: "Wallet" },
   { id: "price", label: "Прайс", icon: "ListOrdered" },
 ];
 
 export default function Index() {
-  const [tab, setTab] = useState<Tab>("habits");
+  const [tab, setTab] = useState<Tab>("finance");
 
   return (
     <div className="app-root">
@@ -843,7 +842,6 @@ export default function Index() {
       </nav>
 
       <main className="app-content">
-        {tab === "habits" && <HabitsSection />}
         {tab === "finance" && <FinanceSection />}
         {tab === "price" && <PriceSection />}
       </main>
