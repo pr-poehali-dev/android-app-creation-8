@@ -1654,6 +1654,44 @@ function SendInvoiceButton({ order }: { order: Order }) {
     window.open(url, "_blank");
   }
 
+  function downloadPdf() {
+    const rows = order.items.map((i) => `
+      <tr>
+        <td style="padding:6px 8px;border-bottom:1px solid #e5e7eb">${i.name}${i.unit ? ` (${i.unit})` : ""}</td>
+        <td style="padding:6px 8px;border-bottom:1px solid #e5e7eb;text-align:center">${i.qty}</td>
+        <td style="padding:6px 8px;border-bottom:1px solid #e5e7eb;text-align:right">${fmt(i.price)}</td>
+        <td style="padding:6px 8px;border-bottom:1px solid #e5e7eb;text-align:right;font-weight:600">${fmt(i.price * i.qty)}</td>
+      </tr>`).join("");
+    const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>Счёт</title>
+    <style>body{font-family:Arial,sans-serif;padding:40px;color:#111;max-width:700px;margin:0 auto}
+    h2{margin:0 0 4px}p{margin:2px 0;color:#555;font-size:13px}
+    table{width:100%;border-collapse:collapse;margin-top:24px}
+    th{background:#f3f4f6;padding:8px;text-align:left;font-size:13px;border-bottom:2px solid #d1d5db}
+    th:nth-child(2),th:nth-child(3),th:nth-child(4){text-align:center}
+    th:nth-child(4){text-align:right}.total-row td{font-size:16px;font-weight:700;padding-top:12px}
+    .discount{color:#ef4444}.footer{margin-top:32px;font-size:12px;color:#9ca3af}
+    @media print{body{padding:0}}</style></head><body>
+    <h2>📋 Счёт на оплату</h2>
+    <p>Клиент: <strong>${order.client}</strong></p>
+    ${order.phone ? `<p>Телефон: ${order.phone}</p>` : ""}
+    ${order.address ? `<p>Адрес: ${order.address}</p>` : ""}
+    <p>Дата: ${order.createdAt}</p>
+    <table>
+      <thead><tr><th>Наименование</th><th>Кол-во</th><th>Цена</th><th>Сумма</th></tr></thead>
+      <tbody>${rows}</tbody>
+    </table>
+    <table style="margin-top:8px"><tbody>
+      ${order.discount > 0 ? `<tr><td style="padding:4px 8px;color:#555">Сумма без скидки</td><td style="padding:4px 8px;text-align:right">${fmt(rawTotal)}</td></tr>
+      <tr><td style="padding:4px 8px;color:#ef4444">Скидка ${order.discount}%</td><td style="padding:4px 8px;text-align:right;color:#ef4444">−${fmt(discountAmt)}</td></tr>` : ""}
+      <tr class="total-row"><td style="padding:8px">ИТОГО</td><td style="padding:8px;text-align:right;color:#2563eb">${fmt(total)}</td></tr>
+    </tbody></table>
+    <div class="footer">Сформировано автоматически</div>
+    <script>window.onload=()=>{window.print();window.onafterprint=()=>window.close()}</script>
+    </body></html>`;
+    const w = window.open("", "_blank");
+    if (w) { w.document.write(html); w.document.close(); }
+  }
+
   return (
     <>
       <button className="send-invoice-btn" onClick={() => setOpen(true)}>
@@ -1689,6 +1727,10 @@ function SendInvoiceButton({ order }: { order: Order }) {
               <button className="invoice-action-btn" style={copied ? { background: "#16a34a", color: "#fff" } : { background: "#f3f4f6", color: "#374151" }} onClick={copyText}>
                 <Icon name={copied ? "Check" : "Copy"} size={16} />
                 {copied ? "Скопировано!" : "Скопировать текст"}
+              </button>
+              <button className="invoice-action-btn" style={{ background: "#7c3aed", color: "#fff" }} onClick={downloadPdf}>
+                <Icon name="FileDown" size={16} />
+                Скачать PDF
               </button>
             </div>
 
