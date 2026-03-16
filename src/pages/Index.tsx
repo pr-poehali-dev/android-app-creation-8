@@ -981,6 +981,7 @@ type Order = {
   items: SmetaItem[];
   createdAt: string;
   note: string;
+  discount: number;
 };
 
 const STATUS_META: Record<OrderStatus, { label: string; color: string; bg: string }> = {
@@ -998,7 +999,7 @@ const INIT_ORDERS: Order[] = [
       { id: "i1", name: "Замена розетки", qty: 3, price: 180 },
       { id: "i2", name: "Монтаж гипсокартона", qty: 1, price: 250 },
     ],
-    createdAt: "2026-03-14", note: "Позвонить за день до выезда",
+    createdAt: "2026-03-14", note: "Позвонить за день до выезда", discount: 10,
   },
   {
     id: "o2", client: "Петрова Анна", phone: "+7 911 987-65-43",
@@ -1006,7 +1007,7 @@ const INIT_ORDERS: Order[] = [
     items: [
       { id: "i3", name: "Установка автоматического выключателя", qty: 2, price: 300 },
     ],
-    createdAt: "2026-03-15", note: "",
+    createdAt: "2026-03-15", note: "", discount: 0,
   },
   {
     id: "o3", client: "Сидоров Михаил", phone: "+7 922 555-00-11",
@@ -1015,7 +1016,7 @@ const INIT_ORDERS: Order[] = [
       { id: "i4", name: "Прокладка кабеля сечением до 4 кв.мм.", unit: "1 м", qty: 20, price: 70 },
       { id: "i5", name: "Установка распределительной коробки", qty: 1, price: 100 },
     ],
-    createdAt: "2026-03-10", note: "",
+    createdAt: "2026-03-10", note: "", discount: 5,
   },
 ];
 
@@ -1037,7 +1038,7 @@ function OrdersSection({ onOpenOrder }: { onOpenOrder: (order: Order) => void })
     const order: Order = {
       id: uid(), client: newClient.trim(), phone: newPhone.trim(),
       address: newAddress.trim(), status: "new", items: [],
-      createdAt: new Date().toISOString().slice(0, 10), note: newNote.trim(),
+      createdAt: new Date().toISOString().slice(0, 10), note: newNote.trim(), discount: 0,
     };
     setOrders([order, ...orders]);
     setNewClient(""); setNewPhone(""); setNewAddress(""); setNewNote("");
@@ -1118,7 +1119,8 @@ function OrdersSection({ onOpenOrder }: { onOpenOrder: (order: Order) => void })
       <div className="space-y-2">
         {filtered.map((order) => {
           const m = STATUS_META[order.status];
-          const orderTotal = order.items.reduce((s, i) => s + i.price * i.qty, 0);
+          const rawTotal = order.items.reduce((s, i) => s + i.price * i.qty, 0);
+          const orderTotal = rawTotal * (1 - (order.discount || 0) / 100);
           return (
             <div key={order.id} className="order-card" onClick={() => onOpenOrder(order)}>
               <div className="order-card-top">
@@ -1147,6 +1149,9 @@ function OrdersSection({ onOpenOrder }: { onOpenOrder: (order: Order) => void })
                   <Icon name="Package" size={12} />
                   {order.items.length} позиций
                 </span>
+                {order.discount > 0 && (
+                  <span className="discount-badge">−{order.discount}%</span>
+                )}
                 <span className="order-total">{fmt(orderTotal)}</span>
                 <button className="icon-btn" style={{ color: "#f87171", opacity: 1 }}
                   onClick={(e) => { e.stopPropagation(); deleteOrder(order.id); }}>
@@ -1178,14 +1183,29 @@ function OrderDetail({ order, onBack, onAddFromPrice }: {
 }) {
   const [items, setItems] = useState<SmetaItem[]>(order.items);
   const [status, setStatus] = useState<OrderStatus>(order.status);
+  const [discount, setDiscount] = useState(order.discount || 0);
   const [editingPrice, setEditingPrice] = useState<string | null>(null);
   const [editPriceVal, setEditPriceVal] = useState("");
 
+  // client edit
+  const [editingClient, setEditingClient] = useState(false);
+  const [editClient, setEditClient] = useState(order.client);
+  const [editPhone, setEditPhone] = useState(order.phone);
+  const [editAddress, setEditAddress] = useState(order.address);
+  const [editNote, setEditNote] = useState(order.note);
+
+  // sync mutations back to order object
   order.items = items;
   order.status = status;
+  order.discount = discount;
+  order.client = editClient;
+  order.phone = editPhone;
+  order.address = editAddress;
+  order.note = editNote;
 
-  const total = items.reduce((s, i) => s + i.price * i.qty, 0);
-  const m = STATUS_META[status];
+  const rawTotal = items.reduce((s, i) => s + i.price * i.qty, 0);
+  const discountAmt = rawTotal * discount / 100;
+  const total = rawTotal - discountAmt;
 
   function changeQty(id: string, qty: number) {
     setItems(items.map((i) => i.id === id ? { ...i, qty } : i));
@@ -1201,29 +1221,52 @@ function OrderDetail({ order, onBack, onAddFromPrice }: {
     setEditingPrice(null);
   }
 
+  function editItemName(id: string, name: string) {
+    setItems(items.map((i) => i.id === id ? { ...i, name } : i));
+  }
+
   const statuses: OrderStatus[] = ["new", "in_progress", "done", "cancelled"];
 
   return (
     <div className="space-y-5">
-      {/* Back */}
       <button className="back-btn" onClick={onBack}>
         <Icon name="ArrowLeft" size={15} />
         Все заказы
       </button>
 
-      {/* Header card */}
+      {/* Client card */}
       <div className="order-detail-card">
-        <div className="order-detail-name">{order.client}</div>
-        {order.phone && <div className="order-meta"><Icon name="Phone" size={13} style={{ color: "#9ca3af" }} />{order.phone}</div>}
-        {order.address && <div className="order-meta"><Icon name="MapPin" size={13} style={{ color: "#9ca3af" }} />{order.address}</div>}
-        {order.note && <div className="order-note" style={{ marginTop: 4 }}>{order.note}</div>}
+        {editingClient ? (
+          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+            <input className="add-field" placeholder="Имя Фамилия *" value={editClient} onChange={(e) => setEditClient(e.target.value)} />
+            <input className="add-field" placeholder="Телефон" value={editPhone} onChange={(e) => setEditPhone(e.target.value)} />
+            <input className="add-field" placeholder="Адрес объекта" value={editAddress} onChange={(e) => setEditAddress(e.target.value)} />
+            <input className="add-field" placeholder="Заметка" value={editNote} onChange={(e) => setEditNote(e.target.value)} />
+            <button className="pass-confirm" style={{ marginTop: 2 }} onClick={() => setEditingClient(false)}>
+              Сохранить
+            </button>
+          </div>
+        ) : (
+          <>
+            <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 8 }}>
+              <div className="order-detail-name">{editClient || "—"}</div>
+              <button className="icon-btn" style={{ opacity: 1, flexShrink: 0 }} onClick={() => setEditingClient(true)} title="Редактировать клиента">
+                <Icon name="Pencil" size={14} />
+              </button>
+            </div>
+            {editPhone && <div className="order-meta"><Icon name="Phone" size={13} style={{ color: "#9ca3af" }} />{editPhone}</div>}
+            {editAddress && <div className="order-meta"><Icon name="MapPin" size={13} style={{ color: "#9ca3af" }} />{editAddress}</div>}
+            {editNote && <div className="order-note" style={{ marginTop: 4 }}>{editNote}</div>}
+          </>
+        )}
 
-        {/* Status selector */}
+        {/* Status */}
         <div className="status-row">
           {statuses.map((s) => {
             const sm = STATUS_META[s];
             return (
-              <button key={s} className="status-btn" style={status === s ? { color: sm.color, background: sm.bg, borderColor: sm.color } : {}}
+              <button key={s} className="status-btn"
+                style={status === s ? { color: sm.color, background: sm.bg, borderColor: sm.color } : {}}
                 onClick={() => setStatus(s)}>
                 {sm.label}
               </button>
@@ -1232,19 +1275,47 @@ function OrderDetail({ order, onBack, onAddFromPrice }: {
         </div>
       </div>
 
-      {/* Итог */}
-      <div className="fin-card fin-balance">
-        <span className="fin-label">Итого по заказу</span>
-        <span className="fin-amount">{fmt(total)}</span>
+      {/* Discount */}
+      <div className="discount-row">
+        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+          <Icon name="Tag" size={14} style={{ color: "#16a34a" }} />
+          <span style={{ fontSize: 13, fontWeight: 600, color: "#111827" }}>Скидка клиента</span>
+        </div>
+        <div className="discount-stepper">
+          <button className="qty-btn" onClick={() => setDiscount(Math.max(0, discount - 1))}>−</button>
+          <span className="discount-val">{discount}%</span>
+          <button className="qty-btn" onClick={() => setDiscount(Math.min(100, discount + 1))}>+</button>
+        </div>
       </div>
+
+      {/* Totals */}
+      <div className="grid grid-cols-2 gap-3">
+        <div className="fin-card">
+          <span className="fin-label">Сумма без скидки</span>
+          <span className="fin-amount" style={{ fontSize: 15, color: "#6b7280" }}>{fmt(rawTotal)}</span>
+        </div>
+        <div className="fin-card fin-balance">
+          <span className="fin-label">Итого{discount > 0 ? ` (−${discount}%)` : ""}</span>
+          <span className="fin-amount" style={{ color: "#111827" }}>{fmt(total)}</span>
+        </div>
+      </div>
+      {discount > 0 && (
+        <div style={{ fontSize: 12, color: "#16a34a", fontWeight: 500, marginTop: -8, paddingLeft: 2 }}>
+          Скидка: {fmt(discountAmt)}
+        </div>
+      )}
 
       {/* Items */}
       <div className="space-y-1">
         {items.map((item) => (
           <div key={item.id} className="task-row" style={{ alignItems: "flex-start", paddingTop: 10, paddingBottom: 10 }}>
             <div style={{ flex: 1, minWidth: 0 }}>
-              <div className="task-text" style={{ fontSize: 13 }}>{item.name}</div>
-              {item.unit && <div style={{ fontSize: 11, color: "#9ca3af", marginTop: 2 }}>{item.unit}</div>}
+              <input
+                className="item-name-input"
+                value={item.name}
+                onChange={(e) => editItemName(item.id, e.target.value)}
+              />
+              {item.unit && <div style={{ fontSize: 11, color: "#9ca3af", marginTop: 1 }}>{item.unit}</div>}
             </div>
             <div className="task-actions" style={{ opacity: 1, alignItems: "center", gap: 6 }}>
               <div className="qty-stepper">
@@ -1264,7 +1335,8 @@ function OrderDetail({ order, onBack, onAddFromPrice }: {
                   </button>
                 )
               ) : (
-                <span className="font-semibold text-sm" style={{ color: "#2563eb", minWidth: 72, textAlign: "right", cursor: "pointer" }}
+                <span className="font-semibold text-sm"
+                  style={{ color: "#2563eb", minWidth: 72, textAlign: "right", cursor: "pointer" }}
                   onClick={() => { setEditingPrice(item.id); setEditPriceVal(String(item.price)); }}
                   title="Изменить цену">
                   {fmt(item.price * item.qty)}

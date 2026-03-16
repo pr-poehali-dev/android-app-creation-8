@@ -1062,3 +1062,68 @@
   background: #eff6ff;
   border-color: #2563eb;
 }
+
+/* ── Discount ───────────────────────────────────────────── */
+.discount-badge {
+  font-size: 11px;
+  font-weight: 700;
+  color: #16a34a;
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  border-radius: 999px;
+  padding: 2px 7px;
+  flex-shrink: 0;
+}
+
+.discount-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #fff;
+  border: 1px solid #f3f4f6;
+  border-radius: 12px;
+  padding: 12px 14px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+.discount-stepper {
+  display: flex;
+  align-items: center;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.discount-val {
+  min-width: 44px;
+  text-align: center;
+  font-size: 14px;
+  font-weight: 700;
+  color: #16a34a;
+  border-left: 1px solid #e5e7eb;
+  border-right: 1px solid #e5e7eb;
+  line-height: 26px;
+}
+
+/* ── Item name inline edit ──────────────────────────────── */
+.item-name-input {
+  width: 100%;
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid transparent;
+  outline: none;
+  font-size: 13px;
+  color: #374151;
+  font-family: inherit;
+  padding: 0;
+  transition: border-color 0.12s;
+}
+
+.item-name-input:hover {
+  border-bottom-color: #e5e7eb;
+}
+
+.item-name-input:focus {
+  border-bottom-color: #2563eb;
+  color: #111827;
+}
