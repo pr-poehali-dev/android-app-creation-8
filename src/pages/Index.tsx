@@ -969,10 +969,334 @@ function PriceSection({ onAdd, editMode }: { onAdd: (item: SmetaItem) => void; e
   );
 }
 
+// ─── Orders ──────────────────────────────────────────────
+type OrderStatus = "new" | "in_progress" | "done" | "cancelled";
+
+type Order = {
+  id: string;
+  client: string;
+  phone: string;
+  address: string;
+  status: OrderStatus;
+  items: SmetaItem[];
+  createdAt: string;
+  note: string;
+};
+
+const STATUS_META: Record<OrderStatus, { label: string; color: string; bg: string }> = {
+  new:         { label: "Новый",      color: "#2563eb", bg: "#eff6ff" },
+  in_progress: { label: "В работе",   color: "#d97706", bg: "#fffbeb" },
+  done:        { label: "Выполнен",   color: "#16a34a", bg: "#f0fdf4" },
+  cancelled:   { label: "Отменён",    color: "#ef4444", bg: "#fef2f2" },
+};
+
+const INIT_ORDERS: Order[] = [
+  {
+    id: "o1", client: "Иванов Сергей", phone: "+7 900 123-45-67",
+    address: "ул. Ленина, 12, кв. 5", status: "in_progress",
+    items: [
+      { id: "i1", name: "Замена розетки", qty: 3, price: 180 },
+      { id: "i2", name: "Монтаж гипсокартона", qty: 1, price: 250 },
+    ],
+    createdAt: "2026-03-14", note: "Позвонить за день до выезда",
+  },
+  {
+    id: "o2", client: "Петрова Анна", phone: "+7 911 987-65-43",
+    address: "пр. Мира, 8, кв. 14", status: "new",
+    items: [
+      { id: "i3", name: "Установка автоматического выключателя", qty: 2, price: 300 },
+    ],
+    createdAt: "2026-03-15", note: "",
+  },
+  {
+    id: "o3", client: "Сидоров Михаил", phone: "+7 922 555-00-11",
+    address: "ул. Садовая, 3, оф. 201", status: "done",
+    items: [
+      { id: "i4", name: "Прокладка кабеля сечением до 4 кв.мм.", unit: "1 м", qty: 20, price: 70 },
+      { id: "i5", name: "Установка распределительной коробки", qty: 1, price: 100 },
+    ],
+    createdAt: "2026-03-10", note: "",
+  },
+];
+
+function OrdersSection({ onOpenOrder }: { onOpenOrder: (order: Order) => void }) {
+  const [orders, setOrders] = useState<Order[]>(INIT_ORDERS);
+  const [showNew, setShowNew] = useState(false);
+  const [filterStatus, setFilterStatus] = useState<OrderStatus | "all">("all");
+  const [newClient, setNewClient] = useState("");
+  const [newPhone, setNewPhone] = useState("");
+  const [newAddress, setNewAddress] = useState("");
+  const [newNote, setNewNote] = useState("");
+
+  const filtered = filterStatus === "all"
+    ? orders
+    : orders.filter((o) => o.status === filterStatus);
+
+  function createOrder() {
+    if (!newClient.trim()) return;
+    const order: Order = {
+      id: uid(), client: newClient.trim(), phone: newPhone.trim(),
+      address: newAddress.trim(), status: "new", items: [],
+      createdAt: new Date().toISOString().slice(0, 10), note: newNote.trim(),
+    };
+    setOrders([order, ...orders]);
+    setNewClient(""); setNewPhone(""); setNewAddress(""); setNewNote("");
+    setShowNew(false);
+    onOpenOrder(order);
+  }
+
+  function deleteOrder(id: string) {
+    setOrders(orders.filter((o) => o.id !== id));
+  }
+
+  function cycleStatus(id: string) {
+    const cycle: OrderStatus[] = ["new", "in_progress", "done", "cancelled"];
+    setOrders(orders.map((o) => {
+      if (o.id !== id) return o;
+      const next = cycle[(cycle.indexOf(o.status) + 1) % cycle.length];
+      return { ...o, status: next };
+    }));
+  }
+
+  const total = orders.reduce((s, o) => s + o.items.reduce((ss, i) => ss + i.price * i.qty, 0), 0);
+  const inWork = orders.filter((o) => o.status === "in_progress").length;
+  const newCount = orders.filter((o) => o.status === "new").length;
+
+  return (
+    <div className="space-y-5">
+      {/* Stats */}
+      <div className="flex gap-3">
+        <div className="stat-card">
+          <span className="stat-num">{orders.length}</span>
+          <span className="stat-label">Заказов</span>
+        </div>
+        <div className="stat-card">
+          <span className="stat-num" style={{ color: "#d97706" }}>{inWork}</span>
+          <span className="stat-label">В работе</span>
+        </div>
+        <div className="stat-card">
+          <span className="stat-num" style={{ color: "#2563eb" }}>{newCount}</span>
+          <span className="stat-label">Новых</span>
+        </div>
+      </div>
+
+      {/* Total */}
+      <div className="fin-card fin-balance">
+        <span className="fin-label">Общая сумма заказов</span>
+        <span className="fin-amount">{fmt(total)}</span>
+      </div>
+
+      {/* Filters */}
+      <div className="filter-row">
+        <button className={`filter-pill ${filterStatus === "all" ? "active" : ""}`} onClick={() => setFilterStatus("all")}>Все</button>
+        {(Object.entries(STATUS_META) as [OrderStatus, typeof STATUS_META[OrderStatus]][]).map(([key, m]) => (
+          <button
+            key={key}
+            className={`filter-pill ${filterStatus === key ? "active" : ""}`}
+            style={filterStatus === key ? { borderColor: m.color, color: m.color, background: m.bg } : {}}
+            onClick={() => setFilterStatus(key)}
+          >{m.label}</button>
+        ))}
+      </div>
+
+      {/* New order form */}
+      {showNew && (
+        <div className="order-new-form">
+          <div className="order-new-title">Новый заказ</div>
+          <input className="add-field" placeholder="Имя клиента *" value={newClient} onChange={(e) => setNewClient(e.target.value)} />
+          <input className="add-field" placeholder="Телефон" value={newPhone} onChange={(e) => setNewPhone(e.target.value)} />
+          <input className="add-field" placeholder="Адрес объекта" value={newAddress} onChange={(e) => setNewAddress(e.target.value)} />
+          <input className="add-field" placeholder="Заметка" value={newNote} onChange={(e) => setNewNote(e.target.value)} />
+          <div style={{ display: "flex", gap: 8 }}>
+            <button className="pass-cancel" onClick={() => setShowNew(false)}>Отмена</button>
+            <button className="pass-confirm" onClick={createOrder}>Создать заказ</button>
+          </div>
+        </div>
+      )}
+
+      {/* Order cards */}
+      <div className="space-y-2">
+        {filtered.map((order) => {
+          const m = STATUS_META[order.status];
+          const orderTotal = order.items.reduce((s, i) => s + i.price * i.qty, 0);
+          return (
+            <div key={order.id} className="order-card" onClick={() => onOpenOrder(order)}>
+              <div className="order-card-top">
+                <div className="order-client">
+                  <Icon name="User" size={14} style={{ color: "#9ca3af", flexShrink: 0 }} />
+                  <span>{order.client}</span>
+                </div>
+                <span className="order-status-badge" style={{ color: m.color, background: m.bg }}>
+                  {m.label}
+                </span>
+              </div>
+              {order.phone && (
+                <div className="order-meta">
+                  <Icon name="Phone" size={12} style={{ color: "#9ca3af" }} />
+                  {order.phone}
+                </div>
+              )}
+              {order.address && (
+                <div className="order-meta">
+                  <Icon name="MapPin" size={12} style={{ color: "#9ca3af" }} />
+                  {order.address}
+                </div>
+              )}
+              <div className="order-card-bottom">
+                <span className="order-items-count">
+                  <Icon name="Package" size={12} />
+                  {order.items.length} позиций
+                </span>
+                <span className="order-total">{fmt(orderTotal)}</span>
+                <button className="icon-btn" style={{ color: "#f87171", opacity: 1 }}
+                  onClick={(e) => { e.stopPropagation(); deleteOrder(order.id); }}>
+                  <Icon name="Trash2" size={13} />
+                </button>
+              </div>
+              {order.note && <div className="order-note">{order.note}</div>}
+            </div>
+          );
+        })}
+        {filtered.length === 0 && (
+          <div className="text-center py-10 text-gray-400 text-sm">Нет заказов</div>
+        )}
+      </div>
+
+      {/* FAB */}
+      <button className="fab-btn" onClick={() => setShowNew(true)}>
+        <Icon name="Plus" size={20} />
+      </button>
+    </div>
+  );
+}
+
+// ─── Order detail ─────────────────────────────────────────
+function OrderDetail({ order, onBack, onAddFromPrice }: {
+  order: Order;
+  onBack: () => void;
+  onAddFromPrice: () => void;
+}) {
+  const [items, setItems] = useState<SmetaItem[]>(order.items);
+  const [status, setStatus] = useState<OrderStatus>(order.status);
+  const [editingPrice, setEditingPrice] = useState<string | null>(null);
+  const [editPriceVal, setEditPriceVal] = useState("");
+
+  order.items = items;
+  order.status = status;
+
+  const total = items.reduce((s, i) => s + i.price * i.qty, 0);
+  const m = STATUS_META[status];
+
+  function changeQty(id: string, qty: number) {
+    setItems(items.map((i) => i.id === id ? { ...i, qty } : i));
+  }
+
+  function deleteItem(id: string) {
+    setItems(items.filter((i) => i.id !== id));
+  }
+
+  function savePrice(id: string) {
+    const val = parseFloat(editPriceVal);
+    if (!isNaN(val) && val >= 0) setItems(items.map((i) => i.id === id ? { ...i, price: val } : i));
+    setEditingPrice(null);
+  }
+
+  const statuses: OrderStatus[] = ["new", "in_progress", "done", "cancelled"];
+
+  return (
+    <div className="space-y-5">
+      {/* Back */}
+      <button className="back-btn" onClick={onBack}>
+        <Icon name="ArrowLeft" size={15} />
+        Все заказы
+      </button>
+
+      {/* Header card */}
+      <div className="order-detail-card">
+        <div className="order-detail-name">{order.client}</div>
+        {order.phone && <div className="order-meta"><Icon name="Phone" size={13} style={{ color: "#9ca3af" }} />{order.phone}</div>}
+        {order.address && <div className="order-meta"><Icon name="MapPin" size={13} style={{ color: "#9ca3af" }} />{order.address}</div>}
+        {order.note && <div className="order-note" style={{ marginTop: 4 }}>{order.note}</div>}
+
+        {/* Status selector */}
+        <div className="status-row">
+          {statuses.map((s) => {
+            const sm = STATUS_META[s];
+            return (
+              <button key={s} className="status-btn" style={status === s ? { color: sm.color, background: sm.bg, borderColor: sm.color } : {}}
+                onClick={() => setStatus(s)}>
+                {sm.label}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Итог */}
+      <div className="fin-card fin-balance">
+        <span className="fin-label">Итого по заказу</span>
+        <span className="fin-amount">{fmt(total)}</span>
+      </div>
+
+      {/* Items */}
+      <div className="space-y-1">
+        {items.map((item) => (
+          <div key={item.id} className="task-row" style={{ alignItems: "flex-start", paddingTop: 10, paddingBottom: 10 }}>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div className="task-text" style={{ fontSize: 13 }}>{item.name}</div>
+              {item.unit && <div style={{ fontSize: 11, color: "#9ca3af", marginTop: 2 }}>{item.unit}</div>}
+            </div>
+            <div className="task-actions" style={{ opacity: 1, alignItems: "center", gap: 6 }}>
+              <div className="qty-stepper">
+                <button className="qty-btn" onClick={() => changeQty(item.id, Math.max(1, item.qty - 1))}>−</button>
+                <span className="qty-val">{item.qty}</span>
+                <button className="qty-btn" onClick={() => changeQty(item.id, item.qty + 1)}>+</button>
+              </div>
+              {item.price === 0 ? (
+                editingPrice === item.id ? (
+                  <input autoFocus className="price-edit-input" placeholder="Сумма" type="number"
+                    value={editPriceVal} onChange={(e) => setEditPriceVal(e.target.value)}
+                    onBlur={() => savePrice(item.id)}
+                    onKeyDown={(e) => { if (e.key === "Enter") savePrice(item.id); if (e.key === "Escape") setEditingPrice(null); }} />
+                ) : (
+                  <button className="price-zero-btn" onClick={() => { setEditingPrice(item.id); setEditPriceVal(""); }}>
+                    <Icon name="Pencil" size={11} />Указать цену
+                  </button>
+                )
+              ) : (
+                <span className="font-semibold text-sm" style={{ color: "#2563eb", minWidth: 72, textAlign: "right", cursor: "pointer" }}
+                  onClick={() => { setEditingPrice(item.id); setEditPriceVal(String(item.price)); }}
+                  title="Изменить цену">
+                  {fmt(item.price * item.qty)}
+                </span>
+              )}
+              <button className="icon-btn" style={{ color: "#f87171" }} onClick={() => deleteItem(item.id)}>
+                <Icon name="Trash2" size={13} />
+              </button>
+            </div>
+          </div>
+        ))}
+        {items.length === 0 && (
+          <div className="text-center py-8 text-gray-400 text-sm">
+            <Icon name="Package" size={28} style={{ color: "#e5e7eb", margin: "0 auto 8px" }} />
+            Нет позиций — добавьте из прайса
+          </div>
+        )}
+      </div>
+
+      <button className="add-from-price-btn" onClick={onAddFromPrice}>
+        <Icon name="ListOrdered" size={15} />
+        Добавить из прайса
+      </button>
+    </div>
+  );
+}
+
 // ─── Root ─────────────────────────────────────────────────
-type Tab = "smeta" | "price";
+type Tab = "orders" | "smeta" | "price";
 
 const TABS: { id: Tab; label: string; icon: string }[] = [
+  { id: "orders", label: "Заказы", icon: "Briefcase" },
   { id: "smeta", label: "Стоимость услуг", icon: "ClipboardList" },
   { id: "price", label: "Прайс", icon: "ListOrdered" },
 ];
@@ -980,15 +1304,24 @@ const TABS: { id: Tab; label: string; icon: string }[] = [
 const EDIT_PASSWORD = "D4m0;6278@";
 
 export default function Index() {
-  const [tab, setTab] = useState<Tab>("smeta");
+  const [tab, setTab] = useState<Tab>("orders");
   const [smetaItems, setSmetaItems] = useState<SmetaItem[]>([]);
   const [priceEditMode, setPriceEditMode] = useState(false);
   const [showPassPrompt, setShowPassPrompt] = useState(false);
   const [passInput, setPassInput] = useState("");
   const [passError, setPassError] = useState(false);
 
+  // Orders state
+  const [activeOrder, setActiveOrder] = useState<Order | null>(null);
+  const [pendingPriceAdd, setPendingPriceAdd] = useState(false);
+
   function addToSmeta(item: SmetaItem) {
-    setSmetaItems((prev) => [{ ...item, id: uid() }, ...prev]);
+    if (activeOrder) {
+      activeOrder.items = [{ ...item, id: uid() }, ...activeOrder.items];
+      setActiveOrder({ ...activeOrder });
+    } else {
+      setSmetaItems((prev) => [{ ...item, id: uid() }, ...prev]);
+    }
   }
 
   function deleteFromSmeta(id: string) {
@@ -1001,6 +1334,21 @@ export default function Index() {
 
   function changePrice(id: string, price: number) {
     setSmetaItems((prev) => prev.map((i) => i.id === id ? { ...i, price } : i));
+  }
+
+  function handleAddFromPrice() {
+    setPendingPriceAdd(true);
+    setTab("price");
+  }
+
+  function handlePriceAdd(item: SmetaItem) {
+    addToSmeta(item);
+    if (pendingPriceAdd && activeOrder) {
+      setPendingPriceAdd(false);
+      setTab("orders");
+    } else {
+      setTab("smeta");
+    }
   }
 
   return (
@@ -1034,22 +1382,14 @@ export default function Index() {
                       <Icon name="Lock" size={16} style={{ color: "#2563eb" }} />
                       Введите пароль
                     </div>
-                    <input
-                      autoFocus
-                      type="password"
+                    <input autoFocus type="password"
                       className={`pass-input ${passError ? "error" : ""}`}
-                      placeholder="Пароль"
-                      value={passInput}
+                      placeholder="Пароль" value={passInput}
                       onChange={(e) => { setPassInput(e.target.value); setPassError(false); }}
                       onKeyDown={(e) => {
                         if (e.key === "Enter") {
-                          if (passInput === EDIT_PASSWORD) {
-                            setPriceEditMode(true);
-                            setShowPassPrompt(false);
-                          } else {
-                            setPassError(true);
-                            setPassInput("");
-                          }
+                          if (passInput === EDIT_PASSWORD) { setPriceEditMode(true); setShowPassPrompt(false); }
+                          else { setPassError(true); setPassInput(""); }
                         }
                         if (e.key === "Escape") setShowPassPrompt(false);
                       }}
@@ -1058,13 +1398,8 @@ export default function Index() {
                     <div className="pass-actions">
                       <button className="pass-cancel" onClick={() => setShowPassPrompt(false)}>Отмена</button>
                       <button className="pass-confirm" onClick={() => {
-                        if (passInput === EDIT_PASSWORD) {
-                          setPriceEditMode(true);
-                          setShowPassPrompt(false);
-                        } else {
-                          setPassError(true);
-                          setPassInput("");
-                        }
+                        if (passInput === EDIT_PASSWORD) { setPriceEditMode(true); setShowPassPrompt(false); }
+                        else { setPassError(true); setPassInput(""); }
                       }}>Войти</button>
                     </div>
                   </div>
@@ -1077,10 +1412,9 @@ export default function Index() {
 
       <nav className="tab-nav">
         {TABS.map((t) => (
-          <button
-            key={t.id}
+          <button key={t.id}
             className={`tab-btn ${tab === t.id ? "active" : ""}`}
-            onClick={() => setTab(t.id)}
+            onClick={() => { setTab(t.id); if (t.id !== "orders") setActiveOrder(null); setPendingPriceAdd(false); }}
           >
             <Icon name={t.icon} size={16} />
             <span>{t.label}</span>
@@ -1092,6 +1426,16 @@ export default function Index() {
       </nav>
 
       <main className="app-content">
+        {tab === "orders" && !activeOrder && (
+          <OrdersSection onOpenOrder={(o) => setActiveOrder(o)} />
+        )}
+        {tab === "orders" && activeOrder && (
+          <OrderDetail
+            order={activeOrder}
+            onBack={() => setActiveOrder(null)}
+            onAddFromPrice={handleAddFromPrice}
+          />
+        )}
         {tab === "smeta" && (
           <SmetaSection
             items={smetaItems}
@@ -1100,7 +1444,12 @@ export default function Index() {
             onPriceChange={changePrice}
           />
         )}
-        {tab === "price" && <PriceSection onAdd={(item) => { addToSmeta(item); setTab("smeta"); }} editMode={priceEditMode} />}
+        {tab === "price" && (
+          <PriceSection
+            onAdd={handlePriceAdd}
+            editMode={priceEditMode}
+          />
+        )}
       </main>
     </div>
   );
