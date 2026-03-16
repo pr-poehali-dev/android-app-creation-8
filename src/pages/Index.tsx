@@ -977,10 +977,15 @@ const TABS: { id: Tab; label: string; icon: string }[] = [
   { id: "price", label: "Прайс", icon: "ListOrdered" },
 ];
 
+const EDIT_PASSWORD = "D4m0;6278@";
+
 export default function Index() {
   const [tab, setTab] = useState<Tab>("smeta");
   const [smetaItems, setSmetaItems] = useState<SmetaItem[]>([]);
   const [priceEditMode, setPriceEditMode] = useState(false);
+  const [showPassPrompt, setShowPassPrompt] = useState(false);
+  const [passInput, setPassInput] = useState("");
+  const [passError, setPassError] = useState(false);
 
   function addToSmeta(item: SmetaItem) {
     setSmetaItems((prev) => [{ ...item, id: uid() }, ...prev]);
@@ -1010,13 +1015,62 @@ export default function Index() {
             {new Date().toLocaleDateString("ru-RU", { weekday: "long", day: "numeric", month: "long" })}
           </span>
           {tab === "price" && (
-            <button
-              className={`gear-btn ${priceEditMode ? "active" : ""}`}
-              onClick={() => setPriceEditMode((v) => !v)}
-              title={priceEditMode ? "Выйти из редактирования" : "Редактировать прайс"}
-            >
-              <Icon name={priceEditMode ? "X" : "Settings2"} size={16} />
-            </button>
+            <>
+              <button
+                className={`gear-btn ${priceEditMode ? "active" : ""}`}
+                onClick={() => {
+                  if (priceEditMode) { setPriceEditMode(false); }
+                  else { setShowPassPrompt(true); setPassInput(""); setPassError(false); }
+                }}
+                title={priceEditMode ? "Выйти из редактирования" : "Редактировать прайс"}
+              >
+                <Icon name={priceEditMode ? "X" : "Settings2"} size={16} />
+              </button>
+
+              {showPassPrompt && (
+                <div className="pass-overlay" onClick={() => setShowPassPrompt(false)}>
+                  <div className="pass-modal" onClick={(e) => e.stopPropagation()}>
+                    <div className="pass-title">
+                      <Icon name="Lock" size={16} style={{ color: "#2563eb" }} />
+                      Введите пароль
+                    </div>
+                    <input
+                      autoFocus
+                      type="password"
+                      className={`pass-input ${passError ? "error" : ""}`}
+                      placeholder="Пароль"
+                      value={passInput}
+                      onChange={(e) => { setPassInput(e.target.value); setPassError(false); }}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                          if (passInput === EDIT_PASSWORD) {
+                            setPriceEditMode(true);
+                            setShowPassPrompt(false);
+                          } else {
+                            setPassError(true);
+                            setPassInput("");
+                          }
+                        }
+                        if (e.key === "Escape") setShowPassPrompt(false);
+                      }}
+                    />
+                    {passError && <div className="pass-error">Неверный пароль</div>}
+                    <div className="pass-actions">
+                      <button className="pass-cancel" onClick={() => setShowPassPrompt(false)}>Отмена</button>
+                      <button className="pass-confirm" onClick={() => {
+                        if (passInput === EDIT_PASSWORD) {
+                          setPriceEditMode(true);
+                          setShowPassPrompt(false);
+                        } else {
+                          setPassError(true);
+                          setPassInput("");
+                        }
+                      }}>Войти</button>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </>
           )}
         </div>
       </header>
