@@ -1785,11 +1785,29 @@ function AssistantSection() {
       {/* Messages */}
       <div style={{ flex: 1, overflowY: "auto", padding: "16px", display: "flex", flexDirection: "column", gap: 12 }}>
         {messages.length === 0 && (
-          <div style={{ textAlign: "center", color: "#9ca3af", fontSize: 14, marginTop: 40 }}>
-            <div style={{ fontSize: 36, marginBottom: 12 }}>🤖</div>
-            <div style={{ fontWeight: 600, color: "#374151", marginBottom: 6 }}>Помощник работника</div>
-            <div>Помогу составить текст клиенту,</div>
-            <div>ответить на вопрос или рассчитать стоимость.</div>
+          <div style={{ fontSize: 14, marginTop: 24 }}>
+            <div style={{ textAlign: "center", marginBottom: 20 }}>
+              <div style={{ fontSize: 36, marginBottom: 8 }}>⚡</div>
+              <div style={{ fontWeight: 700, color: "#111827", fontSize: 16, marginBottom: 4 }}>Помощник электрика</div>
+              <div style={{ color: "#6b7280" }}>Знаю весь прайс, технологии и расчёты</div>
+            </div>
+            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+              {[
+                "Какой автомат нужен для электроплиты 7 кВт?",
+                "Как правильно установить розетку в бетонную стену?",
+                "Как подключить проходной выключатель?",
+                "Какое сечение кабеля нужно для варочной панели?",
+                "Как найти и устранить короткое замыкание?",
+                "Как правильно подключить люстру с двумя группами?",
+                "Когда нужно ставить УЗО и какое?",
+                "Как собрать электрощит правильно?",
+              ].map((q) => (
+                <button key={q} onClick={() => { setInput(q); }}
+                  style={{ textAlign: "left", background: "#fff", border: "1px solid #e5e7eb", borderRadius: 10, padding: "10px 14px", fontSize: 13, color: "#374151", cursor: "pointer", lineHeight: 1.4 }}>
+                  {q}
+                </button>
+              ))}
+            </div>
           </div>
         )}
         {messages.map((m, i) => (
